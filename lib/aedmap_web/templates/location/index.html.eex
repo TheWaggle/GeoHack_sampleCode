@@ -1,0 +1,57 @@
+<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+<h1>Listing Locations</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th>Locationname</th>
+
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+<%= for location <- @locations do %>
+    <tr>
+      <td><%= location.latitude %></td>
+      <td><%= location.longitude %></td>
+      <td><%= location.locationName %></td>
+
+      <td>
+        <%= link "Show", to: Routes.location_path(@conn, :show, location) %>
+        <%= link "Edit", to: Routes.location_path(@conn, :edit, location) %>
+        <%= link "Delete", to: Routes.location_path(@conn, :delete, location), method: :delete, data: [confirm: "Are you sure?"] %>
+      </td>
+    </tr>
+<% end %>
+  </tbody>
+</table>
+
+<span><%= link "New Location", to: Routes.location_path(@conn, :new) %></span>
+
+<div id="map"></div>
+
+<%
+data = Db.query("SELECT * FROM locations")
+results = Db.to_map(data)
+
+[ head | tail ] = results
+latitude = Map.get(head, "latitude")
+longitude = Map.get(head,"longitude")
+
+%>
+
+<script>
+var map = L.map('map').setView([<%= latitude %>,<%= longitude %>], 13);
+ 
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a&gt; contributors'
+}).addTo(map);
+
+<%= for result <- results do %>
+L.marker([<%= Map.get(result, "latitude") %>,<%= Map.get(result,"longitude") %>]).addTo(map)
+    .bindPopup('<%= Map.get(result,"locationName") %>')
+<% end %>
+
+</script>

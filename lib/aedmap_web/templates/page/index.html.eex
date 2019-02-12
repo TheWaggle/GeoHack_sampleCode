@@ -1,0 +1,55 @@
+<script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+
+<% 
+[ result ] = Json.get("https://aed.azure-mobile.net", "/api/NearAED?lat=35.96&lng=136.185")
+  latitude = Map.get(result,"Latitude")
+  longitude = Map.get(result,"Longitude")
+  locationName = Map.get(result,"LocationName")
+%>
+
+<%= latitude %> 
+<%= longitude %>
+<%= locationName %>
+
+<p><button onclick="geoFindMe()">Show my location</button></p>
+<div id="map"></div>
+
+
+<script>
+function geoFindMe() {
+  var output = document.getElementById("out");
+
+  if (!navigator.geolocation){
+    output.innerHTML = "<p>Geolocation is not supported by your browser</p>";
+    return;
+  }
+
+  function success(position) {
+    var latitude  = position.coords.latitude;
+    var longitude = position.coords.longitude;
+    var map = L.map('map').setView([ latitude , longitude ], 5);
+    var to =  turf.point([latitude, longitude]);
+    var from = turf.point([<%= latitude %>,<%= longitude %>]);
+    //現在位置のGeoJSONデータ
+    var options = {units: 'kilometers'}; 
+    var distance = turf.distance(from, to, options);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    L.marker([latitude,longitude]).addTo(map).bindPopup('あなたの現在位置'+ '<p>Latitude is ' + latitude + '° <br>Longitude is ' + longitude + '° <%= locationName %>からの距離は' + Math.round(distance*1000) + 'm</p>');  
+    
+    L.marker([<%= latitude %>,<%= longitude %>]).addTo(map).bindPopup('<%= locationName %>');
+    
+    
+    addToMap.addTo(map);
+  }
+
+
+  function error() {
+    output.innerHTML = "Unable to retrieve your location";
+  }
+  navigator.geolocation.getCurrentPosition(success, error);
+}
+</script>
